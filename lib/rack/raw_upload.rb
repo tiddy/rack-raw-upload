@@ -30,19 +30,23 @@ module Rack
 
     def convert_and_pass_on(env)
       tempfile = Tempfile.new('raw-upload.', @tmpdir)
-      if (RUBY_VERSION.split('.').map{|e| e.to_i} <=> [1, 9]) > 0
+      if (RUBY_VERSION.split('.').map{|e| e.to_i} <=> [1, 9]) < 0
+        # Edit : Changed conditional for non 1.9 Ruby. Causing tmpfile issues on 1.9.2 & Rails 3.1.rcX
+        
         # 1.8.7: if the 'original' tempfile has no open file-handler,
         # the garbage collector will unlink this file.
         # in this case, only the path to the 'original' tempfile is used
         # and the physical file will be deleted, if the gc runs.
         tempfile = open(tempfile.path, "r+:BINARY")
       end
-      tempfile << env['rack.input'].read
+      env['rack.input'].each do |chunk|                   # Fixes Encoding::UndefinedConversionError
+        tempfile << chunk.force_encoding('UTF-8')    
+      end
       tempfile.flush
       tempfile.rewind
       fake_file = {
         :filename => env['HTTP_X_FILE_NAME'],
-        :type => env['CONTENT_TYPE'],
+        :type => :type => MIME::Types.type_for(env['HTTP_X_FILE_NAME']).first,  # Added proper MIME Type handling
         :tempfile => tempfile,
       }
       env['rack.request.form_input'] = env['rack.input']
