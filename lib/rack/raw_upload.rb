@@ -46,7 +46,7 @@ module Rack
       tempfile.rewind
       fake_file = {
         :filename => env['HTTP_X_FILE_NAME'],
-        :type => :type => MIME::Types.type_for(env['HTTP_X_FILE_NAME']).first,  # Added proper MIME Type handling
+        :type => MIME::Types.type_for(env['HTTP_X_FILE_NAME']).first,  # Added proper MIME Type handling
         :tempfile => tempfile,
       }
       env['rack.request.form_input'] = env['rack.input']
